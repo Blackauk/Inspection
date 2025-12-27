@@ -1,0 +1,339 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Company {
+  id        String    @id @default(uuid())
+  name      String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  projects  Project[]
+  users     User[]
+
+  @@map("companies")
+}
+
+model Project {
+  id        String   @id @default(uuid())
+  name      String
+  companyId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  sites   Site[]
+
+  @@map("projects")
+}
+
+model Site {
+  id        String   @id @default(uuid())
+  name      String
+  projectId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  project          Project            @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  zones            Zone[]
+  assets           Asset[]
+  workOrders       WorkOrder[]
+  userAssignments  UserSiteAssignment[]
+  schedules        Schedule[]
+
+  @@map("sites")
+}
+
+model Zone {
+  id        String   @id @default(uuid())
+  name      String
+  siteId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  site   Site    @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  assets Asset[]
+
+  @@map("zones")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  firstName String
+  lastName  String
+  role      String   // Viewer | Fitter | Supervisor | Manager | Admin
+  companyId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company              Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  siteAssignments      UserSiteAssignment[]
+  assignedWorkOrders   WorkOrder[]         @relation("AssignedTo")
+  createdWorkOrders    WorkOrder[]         @relation("CreatedBy")
+  approvedWorkOrders   WorkOrder[]         @relation("ApprovedBy")
+  workOrderNotes       WorkOrderNote[]
+  checkSubmissions     CheckSubmission[]
+  attachments          Attachment[]
+
+  @@map("users")
+}
+
+model UserSiteAssignment {
+  id        String   @id @default(uuid())
+  userId    String
+  siteId    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  site Site @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, siteId])
+  @@map("user_site_assignments")
+}
+
+model AssetType {
+  id        String   @id @default(uuid())
+  name      String
+  prefix    String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  assets       Asset[]
+  assetCounter AssetCounter?
+
+  @@map("asset_types")
+}
+
+model AssetCounter {
+  id          String   @id @default(uuid())
+  assetTypeId String   @unique
+  counter     Int      @default(0)
+  updatedAt   DateTime @updatedAt
+
+  assetType AssetType @relation(fields: [assetTypeId], references: [id], onDelete: Cascade)
+
+  @@map("asset_counters")
+}
+
+model Asset {
+  id           String       @id @default(uuid())
+  code         String       @unique
+  name         String
+  assetTypeId  String
+  siteId       String
+  zoneId       String?
+  category     String       // Plant | Equipment
+  ownership    String       // Owned | Hired
+  status       String       // InUse | OutOfUse | OffHirePending | OffHired | Quarantined
+  parentAssetId String?
+  description  String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  assetType     AssetType      @relation(fields: [assetTypeId], references: [id])
+  site          Site           @relation(fields: [siteId], references: [id])
+  zone          Zone?          @relation(fields: [zoneId], references: [id])
+  parentAsset   Asset?         @relation("AssetHierarchy", fields: [parentAssetId], references: [id])
+  childAssets   Asset[]        @relation("AssetHierarchy")
+  workOrders    WorkOrder[]
+  schedules     Schedule[]
+  checkSubmissions CheckSubmission[]
+
+  @@map("assets")
+}
+
+model WorkOrder {
+  id          String          @id @default(uuid())
+  number      String          @unique
+  type        String          // PPM | Inspection | Breakdown | Defect | Calibration | FireSuppression | LOLER | PUWER
+  status      String          // Open | Assigned | InProgress | WaitingParts | WaitingVendor | Completed | ApprovedClosed | Cancelled
+  title       String
+  description String?
+  priority    String          @default("Medium") // Low | Medium | High | Critical
+  assetId     String
+  siteId      String
+  assignedToId String?
+  createdById String
+  approvedById String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  completedAt DateTime?
+  closedAt    DateTime?
+
+  asset       Asset           @relation(fields: [assetId], references: [id])
+  site        Site            @relation(fields: [siteId], references: [id])
+  assignedTo  User?           @relation("AssignedTo", fields: [assignedToId], references: [id])
+  createdBy   User            @relation("CreatedBy", fields: [createdById], references: [id])
+  approvedBy  User?           @relation("ApprovedBy", fields: [approvedById], references: [id])
+  parts       WorkOrderPart[]
+  notes       WorkOrderNote[]
+
+  @@map("work_orders")
+}
+
+model WorkOrderPart {
+  id          String   @id @default(uuid())
+  workOrderId String
+  partNumber  String
+  description String?
+  quantity    Int      @default(1)
+  createdAt   DateTime @default(now())
+
+  workOrder WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+
+  @@map("work_order_parts")
+}
+
+model WorkOrderNote {
+  id          String   @id @default(uuid())
+  workOrderId String
+  note        String
+  createdById String
+  createdAt   DateTime @default(now())
+
+  workOrder WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  createdBy User      @relation(fields: [createdById], references: [id])
+
+  @@map("work_order_notes")
+}
+
+model Schedule {
+  id             String   @id @default(uuid())
+  assetId        String
+  siteId         String
+  checkTemplateId String
+  name           String
+  scheduleType   String   // TimeBased | HoursBased
+  intervalDays   Int?
+  intervalHours  Int?
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  asset         Asset              @relation(fields: [assetId], references: [id])
+  site          Site               @relation(fields: [siteId], references: [id])
+  checkTemplate CheckTemplate      @relation(fields: [checkTemplateId], references: [id])
+  occurrences   ScheduleOccurrence[]
+
+  @@map("schedules")
+}
+
+model ScheduleOccurrence {
+  id         String   @id @default(uuid())
+  scheduleId String
+  dueDate    DateTime
+  dueHours   Int?
+  isCompleted Boolean  @default(false)
+  completedAt DateTime?
+  createdAt  DateTime @default(now())
+
+  schedule        Schedule         @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  checkSubmissions CheckSubmission[]
+
+  @@index([scheduleId, dueDate])
+  @@map("schedule_occurrences")
+}
+
+model CheckTemplate {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  questions   CheckQuestion[]
+  schedules   Schedule[]
+
+  @@map("check_templates")
+}
+
+model CheckQuestion {
+  id          String   @id @default(uuid())
+  templateId  String
+  question    String
+  type        String   // YesNo | Number | Text
+  unit        String?
+  minValue    Float?
+  maxValue    Float?
+  required    Boolean  @default(true)
+  order       Int
+  createdAt   DateTime @default(now())
+
+  template CheckTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  answers  CheckAnswer[]
+
+  @@map("check_questions")
+}
+
+model CheckSubmission {
+  id         String   @id @default(uuid())
+  occurrenceId String
+  assetId    String
+  submittedById String
+  submittedAt DateTime @default(now())
+
+  occurrence ScheduleOccurrence @relation(fields: [occurrenceId], references: [id])
+  asset      Asset              @relation(fields: [assetId], references: [id])
+  submittedBy User              @relation(fields: [submittedById], references: [id])
+  answers    CheckAnswer[]
+
+  @@map("check_submissions")
+}
+
+model CheckAnswer {
+  id          String   @id @default(uuid())
+  submissionId String
+  questionId  String
+  answer      String   // JSON string for flexibility
+  comment     String?
+  createdAt   DateTime @default(now())
+
+  submission CheckSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  question   CheckQuestion   @relation(fields: [questionId], references: [id])
+
+  @@map("check_answers")
+}
+
+model Attachment {
+  id          String   @id @default(uuid())
+  fileName    String
+  filePath    String
+  mimeType    String
+  fileSize    Int
+  entityType  String   // Asset | WorkOrder | CheckSubmission
+  entityId    String
+  uploadedById String
+  createdAt   DateTime @default(now())
+
+  uploadedBy User @relation(fields: [uploadedById], references: [id])
+
+  @@index([entityType, entityId])
+  @@map("attachments")
+}
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  action      String   // CREATE | UPDATE | DELETE | APPROVE | CLOSE | ASSIGN | STATUS_CHANGE
+  entityType  String
+  entityId    String
+  userId      String
+  changes     String?  // JSON string
+  description String?
+  createdAt   DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+

@@ -1,0 +1,129 @@
+/* Theme CSS Variables */
+:root[data-theme="light"] {
+  --bg: #f8fafc;
+  --card: #ffffff;
+  --text: #0f172a;
+  --text-muted: #475569;
+  --border: #e2e8f0;
+  --input: #ffffff;
+  --input-text: #0f172a;
+  --input-placeholder: #94a3b8;
+  --hover: #f1f5f9;
+}
+
+:root[data-theme="dark"] {
+  --bg: #0b1220;
+  --card: #121a2a;
+  --text: #e5e7eb;
+  --text-muted: #9ca3af;
+  --border: #243044;
+  --input: #0f172a;
+  --input-text: #e5e7eb;
+  --input-placeholder: #6b7280;
+  --hover: #1e293b;
+}
+
+/* Apply theme variables to body and main content areas */
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Cards */
+.card,
+[class*="Card"] {
+  background-color: var(--card);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+/* Inputs */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="date"],
+input[type="number"],
+input[type="search"],
+textarea,
+select {
+  background-color: var(--input);
+  color: var(--input-text);
+  border-color: var(--border);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--input-placeholder);
+}
+
+/* Tables */
+table {
+  background-color: var(--card);
+  color: var(--text);
+}
+
+thead {
+  background-color: var(--hover);
+}
+
+tbody tr:hover {
+  background-color: var(--hover);
+}
+
+/* Modals */
+[class*="Modal"],
+.modal-overlay {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+  background-color: var(--card);
+  color: var(--text);
+}
+
+/* Dropdowns */
+[class*="Dropdown"],
+[class*="Menu"] {
+  background-color: var(--card);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+/* Buttons - keep brand colors but adjust text */
+button {
+  color: var(--text);
+}
+
+/* Links */
+a {
+  color: var(--text);
+}
+
+/* Text colors */
+.text-gray-700,
+.text-gray-900 {
+  color: var(--text);
+}
+
+.text-gray-500,
+.text-gray-600 {
+  color: var(--text-muted);
+}
+
+/* Borders */
+.border-gray-200,
+.border-gray-300 {
+  border-color: var(--border);
+}
+
+/* Backgrounds */
+.bg-white {
+  background-color: var(--card);
+}
+
+.bg-gray-50,
+.bg-gray-100 {
+  background-color: var(--hover);
+}
+

@@ -1,0 +1,80 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build outputs
+dist/
+build/
+*.tsbuildinfo
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+.env.production
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Testing
+coverage/
+.nyc_output/
+*.lcov
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Uploads and user-generated content
+uploads/
+apps/api/uploads/
+
+# Docker
+docker-compose.override.yml
+
+# Prisma
+apps/api/prisma/migrations/*.sql
+!apps/api/prisma/migrations/.gitkeep
+
+# Vite
+.vite/
+*.local
+
+# PWA
+**/public/sw.js
+**/public/workbox-*.js
+**/public/workbox-*.js.map
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+
